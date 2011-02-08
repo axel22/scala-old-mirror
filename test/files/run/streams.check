@@ -1,0 +1,25 @@
+Stream()
+Stream()
+
+Array(1)
+Stream(1, ?)
+Stream(1, ?)
+Stream()
+Stream()
+Stream(1)
+Stream()
+
+Array(1, 2)
+Stream(2)
+Stream()
+Stream(1, 2)
+Stream()
+
+999
+512
+100000
+Stream(100001, ?)
+Stream(100001, ?)
+true
+true
+705082704

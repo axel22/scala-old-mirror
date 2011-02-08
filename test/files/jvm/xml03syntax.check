@@ -1,0 +1,17 @@
+<hello>world</hello>
+<hello>1.5</hello>
+<hello>5</hello>
+<hello>true</hello>
+<hello>5</hello>
+<hello>27</hello>
+<hello>1 2 3 4</hello>
+1
+2
+3
+4
+<hello>2 4</hello>
+2
+4
+
+node=<elem key="<b>hello</b>"></elem>, key=Some(<b>hello</b>)
+node=<elem ></elem>, key=None

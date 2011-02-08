@@ -1,0 +1,140 @@
+#!/bin/bash --posix
+#
+##############################################################################
+# Copyright 2002-2011, LAMP/EPFL
+#
+# This is free software; see the distribution for copying conditions.
+# There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+##############################################################################
+
+function onExit() {
+  if [[ -n "$scaladebug" ]]; then
+    echo "scala script runner trapped exit, running handler."
+  fi
+    
+  local exit_status=${1:-$?}
+
+  # reenable echo
+  case "$TERM" in
+      rxvt* | xterm* | screen*)
+          stty icanon echo
+          ;;
+  esac
+  
+  exit $exit_status
+}
+
+# install exit handler
+trap onExit EXIT
+
+cygwin=false;
+case "`uname`" in
+    CYGWIN*) cygwin=true ;;
+esac
+
+# Finding the root folder for this Scala distribution
+SOURCE=$0;
+SCRIPT=`basename "$SOURCE"`;
+while [ -h "$SOURCE" ]; do
+    SCRIPT=`basename "$SOURCE"`;
+    LOOKUP=`ls -ld "$SOURCE"`;
+    TARGET=`expr "$LOOKUP" : '.*-> \(.*\)$'`;
+    if expr "${TARGET:-.}/" : '/.*/$' > /dev/null; then
+        SOURCE=${TARGET:-.};
+    else
+        SOURCE=`dirname "$SOURCE"`/${TARGET:-.};
+    fi;
+done;
+
+# see #2092
+SCALA_HOME=`dirname "$SOURCE"`
+SCALA_HOME=`cd "$SCALA_HOME"; pwd -P`
+SCALA_HOME=`cd "$SCALA_HOME"/..; pwd`
+
+# Remove spaces from SCALA_HOME on windows
+if $cygwin; then
+    SCALA_HOME=`cygpath --windows --short-name "$SCALA_HOME"`
+    SCALA_HOME=`cygpath --unix "$SCALA_HOME"`
+fi
+
+# Constructing the extension classpath
+TOOL_CLASSPATH="@classpath@"
+if [ -z "$TOOL_CLASSPATH" ] ; then
+    for ext in "$SCALA_HOME"/lib/* ; do
+        if [ -z "$TOOL_CLASSPATH" ] ; then
+            TOOL_CLASSPATH="$ext"
+        else
+            TOOL_CLASSPATH="$TOOL_CLASSPATH:$ext"
+        fi
+    done
+fi
+
+CYGWIN_JLINE_TERMINAL=
+if $cygwin; then
+    if [ "$OS" = "Windows_NT" ] && cygpath -m .>/dev/null 2>/dev/null ; then
+        format=mixed
+    else
+        format=windows
+    fi
+    SCALA_HOME=`cygpath --$format "$SCALA_HOME"`
+    TOOL_CLASSPATH=`cygpath --path --$format "$TOOL_CLASSPATH"`
+    case "$TERM" in
+        rxvt* | xterm*)
+            stty -icanon min 1 -echo
+            CYGWIN_JLINE_TERMINAL="-Djline.terminal=jline.UnixTerminal"
+        ;;
+    esac
+fi
+
+[ -n "$JAVA_OPTS" ] || JAVA_OPTS="@javaflags@"
+
+# break out -D and -J options and add them to JAVA_OPTS as well
+# so they reach the underlying JVM in time to do some good.  The
+# -D options will be available as system properties.
+declare -a java_args
+declare -a scala_args
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -D*)
+      java_args=("${java_args[@@]}" "$1")
+      shift
+      ;;
+    -toolcp)
+      TOOL_CLASSPATH="$TOOL_CLASSPATH:$2"
+      shift
+      ;;
+    -J*)
+      java_args=("${java_args[@@]}" "${1:2}")
+      shift
+      ;;
+    --usebootcp)
+      CPSWITCH="-Xbootclasspath/a:$TOOL_CLASSPATH"
+      shift
+      ;;
+    *)
+      scala_args=("${scala_args[@@]}" "$1")
+      shift
+      ;;
+  esac
+done
+
+: ${CPSWITCH:="-cp $TOOL_CLASSPATH"}
+
+# reset "$@@" to the remaining args
+set -- "${scala_args[@@]}"
+
+if [ -z "$JAVACMD" -a -n "$JAVA_HOME" -a -x "$JAVA_HOME/bin/java" ]; then
+    JAVACMD="$JAVA_HOME/bin/java"
+fi
+
+"${JAVACMD:=java}" \
+  $JAVA_OPTS \
+  "${java_args[@@]}" \
+  $CPSWITCH \
+  -Dscala.usejavacp=true \
+  -Dscala.home="$SCALA_HOME" \
+  -Denv.emacs="$EMACS" \
+  $CYGWIN_JLINE_TERMINAL \
+  @properties@ @class@ @toolflags@ "$@@"
