@@ -1,6 +1,0 @@
-object Test extends Application {
-  for(n <- List(400,700,1000,8000)) {
-    System.setIn(new java.io.FileInputStream(System.getProperty("partest.cwd")+"/sumcol-input.txt"))
-    sumcol.main(Array(n.toString)) 
-  }
-}

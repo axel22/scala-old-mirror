@@ -1,4 +1,0 @@
-nullary-override.scala:2: error: non-nullary method overrides nullary method
-class B extends A { override def x(): Int = 4 }
-                                 ^
-one error found

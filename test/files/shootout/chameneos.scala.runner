@@ -1,3 +1,0 @@
-object Test extends Application {
-  for(n <- List(10000,100000,1000000)) chameneos.main(Array(n.toString)) 
-}
