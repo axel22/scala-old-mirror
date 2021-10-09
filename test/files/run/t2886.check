@@ -1,5 +1,0 @@
-((x: scala.Predef.String) => {
-  val x$1 = x;
-  val x$2 = x;
-  Test.test(x$2, x$1)
-})

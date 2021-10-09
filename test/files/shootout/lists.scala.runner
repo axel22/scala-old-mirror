@@ -1,3 +1,0 @@
-object Test extends Application {
-  for(n <- List(4,8,12,16,18)) lists.main(Array(n.toString)) 
-}
